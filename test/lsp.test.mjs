@@ -70,6 +70,31 @@ test('LSP stdio supports diagnostics, completion, hover, definitions, references
   assert.ok(rename.changes[uri].length >= 3);
   const symbols = await request('textDocument/documentSymbol', { textDocument: { uri } });
   assert.ok(symbols.some(symbol => symbol.name === 'customer'));
+  // Query generic call targets themselves, not only their result variables.
+  // Lowering also replaces the enclosing identity call, so it must retain types.
+  const decisionUri = pathToFileURL(path.resolve('test/decision-fixture.jeva')).href;
+  const decisionSource = `function identity<T>(value: T): T { return value; }
+const team = identity(decide.route("Team?", { criteria: ["billing", "technical"], state: {} }));
+const assessment = decide.batch({}, { approved: { type: "noul", instructions: "Approved?" } });
+`;
+  send('textDocument/didOpen', { textDocument: { uri: decisionUri, languageId: 'jevascript', version: 1, text: decisionSource } });
+  const decisionContext = offset => {
+    const lines = decisionSource.slice(0, offset).split('\n');
+    return { textDocument: { uri: decisionUri }, position: { line: lines.length - 1, character: lines.at(-1).length } };
+  };
+  for (const [target, expected] of [['route', /Promise<"billing" \| "technical">/], ['batch', /approved/], ['identity(decide', /"billing" \| "technical"/]]) {
+    const start = decisionSource.indexOf(target);
+    const params = decisionContext(start + 1);
+    const info = await request('textDocument/hover', params);
+    assert.ok(info, `Missing hover for ${target}: ${JSON.stringify(notifications)}`);
+    assert.match(info.contents.value, expected);
+    const definitions = await request('textDocument/definition', params);
+    assert.ok(definitions?.length, `Missing definition for ${target}`);
+    assert.ok(definitions.some(definition => definition.uri.endsWith(target === 'identity(decide' ? '/decision-fixture.jeva' : '/runtime/globals.d.ts')));
+    const signature = await request('textDocument/signatureHelp', decisionContext(decisionSource.indexOf('(', start) + 1));
+    assert.ok(signature?.signatures.length, `Missing signature for ${target}`);
+    assert.match(signature.signatures[signature.activeSignature].label, expected);
+  }
   const bad = 'const result: number = "wrong";\n';
   send('textDocument/didChange', { textDocument: { uri, version: 2 }, contentChanges: [{ text: bad }] });
   const deadline = Date.now() + 5000;
@@ -88,7 +113,7 @@ test('LSP stdio supports diagnostics, completion, hover, definitions, references
     const content = fs.readFileSync(path.resolve('examples', example), 'utf8');
     send('textDocument/didOpen', { textDocument: { uri: exampleUri, languageId: 'jevascript', version: 1, text: content } });
     await request('textDocument/documentSymbol', { textDocument: { uri: exampleUri } });
-    for (const match of content.matchAll(/\b(?:invoice|transcript|ticket|assessment|state|request|threshold)\b/g)) {
+    for (const match of content.matchAll(/\b(?:invoice|transcript|ticket|assessment|state|request|threshold|decide|route|score|batch|probability|assert)\b/g)) {
       const before = content.slice(0, match.index).split('\n');
       const position = { line: before.length - 1, character: before.at(-1).length };
       const params = { textDocument: { uri: exampleUri }, position };

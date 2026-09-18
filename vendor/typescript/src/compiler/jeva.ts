@@ -5,7 +5,7 @@ import {
     isCallExpression, isClassDeclaration, isFunctionDeclaration, isIdentifier, isImportClause,
     isImportSpecifier, isNamespaceImport, isNumericLiteral, isParameter, isPropertyAccessExpression,
     isVariableDeclaration, isExpression, Mutable, getTokenPosOfNode, idText, Node, NodeFlags, nullTransformationContext, setParentRecursive,
-    setSourceMapRange, setTextRange, SourceFile, SyntaxKind, visitEachChild, visitNode,
+    setSourceMapRange, setTextRange, SourceFile, SyntaxKind, visitEachChild, visitNode, forEachChildRecursively,
 } from "./_namespaces/ts.js";
 
 function locate<T extends Node>(node: T, original: Node): T {
@@ -90,6 +90,13 @@ export function lowerJevaSourceFile(source: SourceFile): SourceFile {
     const result = visitEachChild(source, visit, nullTransformationContext);
     result.externalModuleIndicator = true;
     result.parseDiagnostics = [...source.parseDiagnostics, ...errors];
+    // Lowering happens during parsing, so this is the tree the checker binds.
+    // Factory updates mark nodes as synthesized; editor queries would then
+    // follow their `original` links into the detached, unbound pre-lowering tree.
+    (result as Mutable<Node>).flags &= ~NodeFlags.Synthesized;
+    forEachChildRecursively(result, node => {
+        (node as Mutable<Node>).flags &= ~NodeFlags.Synthesized;
+    });
     setParentRecursive(result, true);
     return result;
 }
