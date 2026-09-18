@@ -13,9 +13,9 @@ const trace = message => { if (process.env.JEVA_TRACE === '1') process.stderr.wr
 function start() {
   if (starting) return starting;
   starting = new Promise((resolve, reject) => {
-    const refli = process.env.JEVA_REFLI_DIR ?? process.env.JEVA_ZEVRI_DIR ?? process.env.JEVA_VELA_DIR ?? path.resolve(root, '../refli');
+    const refli = process.env.JEVA_REFLI_DIR ?? path.resolve(root, '../refli');
     const python = process.env.JEVA_PYTHON ?? path.join(refli, '.venv/bin/python');
-    const model = process.env.JEVA_MODEL ?? path.join(refli, 'work/refli-0.3.0');
+    const model = process.env.JEVA_MODEL ?? path.join(refli, 'work/refli-0.1.0');
     if (!fs.existsSync(python) || !fs.existsSync(path.join(model, 'model.safetensors'))) {
       reject(new Error('Refli is not installed. Keep refli beside JevaScript, or set JEVA_REFLI_DIR / JEVA_PYTHON / JEVA_MODEL.'));
       return;

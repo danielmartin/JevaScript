@@ -48,11 +48,10 @@ The current checkout is already installed and built. Rebuilding is only needed
 after changing compiler or runtime sources.
 
 The default backend is `../refli/.venv/bin/python` with the checkpoint
-at `../refli/work/refli-0.3.0`. Keep that checkout next to JevaScript.
+at `../refli/work/refli-0.1.0`. Keep that checkout next to JevaScript.
 For another location, set `JEVA_REFLI_DIR`; `JEVA_PYTHON` and `JEVA_MODEL` can
 override its Python executable and checkpoint directory. Model weights are not
-included in this repository or downloaded automatically. The earlier
-`JEVA_ZEVRI_DIR` and `JEVA_VELA_DIR` overrides remain accepted.
+included in this repository or downloaded automatically.
 
 ```sh
 jeva check examples/triage.jeva    # syntax and types, no inference
@@ -226,7 +225,7 @@ on each intended workload before its decisions can be trusted.
 
 ## Evaluated model release
 
-The local default is Refli 0.3.0. On 900 human-labeled CLINC150 travel/workplace
+The local default is Refli 0.1.0. On 900 human-labeled CLINC150 travel/workplace
 requests excluded from this adaptation's training and development, complete
 route-and-branch accuracy was 84.0%, versus Laya's 80.4%. This is routing among
 15 intents within a known domain, not evidence of general-purpose superiority.
