@@ -13,26 +13,26 @@ const trace = message => { if (process.env.JEVA_TRACE === '1') process.stderr.wr
 function start() {
   if (starting) return starting;
   starting = new Promise((resolve, reject) => {
-    const zevri = process.env.JEVA_ZEVRI_DIR ?? process.env.JEVA_VELA_DIR ?? path.resolve(root, '../zevri');
-    const python = process.env.JEVA_PYTHON ?? path.join(zevri, '.venv/bin/python');
-    const model = process.env.JEVA_MODEL ?? path.join(zevri, 'work/zevri-0.3.0');
+    const refli = process.env.JEVA_REFLI_DIR ?? process.env.JEVA_ZEVRI_DIR ?? process.env.JEVA_VELA_DIR ?? path.resolve(root, '../refli');
+    const python = process.env.JEVA_PYTHON ?? path.join(refli, '.venv/bin/python');
+    const model = process.env.JEVA_MODEL ?? path.join(refli, 'work/refli-0.3.0');
     if (!fs.existsSync(python) || !fs.existsSync(path.join(model, 'model.safetensors'))) {
-      reject(new Error('Zevri is not installed. Keep zevri beside JevaScript, or set JEVA_ZEVRI_DIR / JEVA_PYTHON / JEVA_MODEL.'));
+      reject(new Error('Refli is not installed. Keep refli beside JevaScript, or set JEVA_REFLI_DIR / JEVA_PYTHON / JEVA_MODEL.'));
       return;
     }
     const token = randomBytes(24).toString('hex');
     const started = performance.now();
-    trace('Starting Zevri');
+    trace('Starting Refli');
     worker = spawn(python, ['-u', path.join(root, 'runtime/worker.py'), '--port', '0', '--model', model], {
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, PYTHONPATH: [zevri, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+      env: { ...process.env, PYTHONPATH: [refli, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
         HF_HUB_OFFLINE: '1', TOKENIZERS_PARALLELISM: 'false', JEVA_WORKER_TOKEN: token },
     });
     const child = worker;
     let buffer = '';
     let stderr = '';
     let ready = false;
-    const timer = setTimeout(() => { child.kill(); reject(new Error('Zevri did not become ready within 120 seconds')); }, 120_000);
+    const timer = setTimeout(() => { child.kill(); reject(new Error('Refli did not become ready within 120 seconds')); }, 120_000);
     child.stderr.on('data', chunk => { stderr = (stderr + chunk).slice(-8000); });
     child.stdout.on('data', chunk => {
       buffer += chunk;
@@ -42,10 +42,10 @@ function start() {
         if (line.startsWith('JEVA_READY ')) {
           try {
             const { port } = JSON.parse(line.slice(11));
-            if (!Number.isInteger(port) || port <= 0 || port > 65535) throw new Error('Invalid Zevri worker port');
+            if (!Number.isInteger(port) || port <= 0 || port > 65535) throw new Error('Invalid Refli worker port');
             ready = true;
             clearTimeout(timer);
-            trace(`Zevri ready in ${(performance.now() - started).toFixed(0)} ms`);
+            trace(`Refli ready in ${(performance.now() - started).toFixed(0)} ms`);
             // Idle model processes must not keep an otherwise completed program alive.
             child.unref(); child.stdout.unref(); child.stderr.unref();
             resolve(createJev({ endpoint: `http://127.0.0.1:${port}/predict`, token, timeoutMs: 30_000 }));
@@ -59,8 +59,8 @@ function start() {
       clearTimeout(timer);
       if (worker === child) worker = undefined;
       starting = undefined;
-      if (!ready) reject(new Error(`Zevri startup failed (${signal ?? code}): ${stderr.trim()}`));
-      else if (code && process.env.JEVA_TRACE === '1') trace(`Zevri exited: ${stderr.trim()}`);
+      if (!ready) reject(new Error(`Refli startup failed (${signal ?? code}): ${stderr.trim()}`));
+      else if (code && process.env.JEVA_TRACE === '1') trace(`Refli exited: ${stderr.trim()}`);
     });
   });
   starting.catch(() => { starting = undefined; });

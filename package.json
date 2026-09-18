@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "TypeScript with built-in probabilistic decisions, powered by Zevri",
+  "description": "TypeScript with built-in probabilistic decisions, powered by Refli",
   "bin": {
     "jeva": "src/cli.mjs",
     "jeva-lsp": "src/lsp.mjs"

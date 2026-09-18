@@ -4,6 +4,10 @@ JevaScript adds decisions to TypeScript. Ask a question about program state,
 choose among named actions, or score a situation against a rubric. Ordinary
 code controls what happens next.
 
+The name refers to Jeva-like decision models: models that return probabilities
+over typed choices, scores, or boolean answers. Refli is the current backend.
+"Jeva-like" is this project's descriptive term, not a dependency on Jev.
+
 ```typescript
 const ticket = { message: "Every API request times out after today's deployment." };
 
@@ -23,9 +27,9 @@ decide.route("What should we inspect first?", {
 
 Save this as `ticket.jeva` and run `jeva run ticket.jeva`.
 The application has no model import, client initialization, or inference server
-setup. The first decision starts Zevri locally. Later decisions reuse it.
+setup. The first decision starts Refli locally. Later decisions reuse it.
 
-This is a working local v0.1 dialect for Node.js 22 or newer. It uses the Zevri
+This is a working local v0.1 dialect for Node.js 22 or newer. It uses the Refli
 checkout and checkpoint already on this machine. Editing and compilation do
 not load the model.
 
@@ -43,11 +47,12 @@ jeva run examples/triage.jeva --trace
 The current checkout is already installed and built. Rebuilding is only needed
 after changing compiler or runtime sources.
 
-The default backend is `../zevri/.venv/bin/python` with the checkpoint
-at `../zevri/work/zevri-0.3.0`. Keep that checkout next to JevaScript.
-For another location, set `JEVA_ZEVRI_DIR`; `JEVA_PYTHON` and `JEVA_MODEL` can
+The default backend is `../refli/.venv/bin/python` with the checkpoint
+at `../refli/work/refli-0.3.0`. Keep that checkout next to JevaScript.
+For another location, set `JEVA_REFLI_DIR`; `JEVA_PYTHON` and `JEVA_MODEL` can
 override its Python executable and checkpoint directory. Model weights are not
-included in this repository or downloaded automatically.
+included in this repository or downloaded automatically. The earlier
+`JEVA_ZEVRI_DIR` and `JEVA_VELA_DIR` overrides remain accepted.
 
 ```sh
 jeva check examples/triage.jeva    # syntax and types, no inference
@@ -145,7 +150,7 @@ before passing them, and omit undefined fields.
 | `examples/incident-desk.jeva` | Assess several aspects of an incident in one request |
 | `examples/support-coach.jeva` | Decide whether another explanation is needed, within a retry budget |
 | `examples/triage.jeva` | Gate, route, and score a support ticket |
-| `examples/live.jeva` | Exercise every decision type against Zevri |
+| `examples/live.jeva` | Exercise every decision type against Refli |
 | `examples/benchmark.jeva` | Measure startup separately from repeated warm inference |
 
 The examples print recommendations and use local tool fixtures. Their results
@@ -202,7 +207,7 @@ TypeScript with a newer release requires reviewing the source changes and
 running the regression checks.
 
 Generated applications use a small JavaScript runtime and a persistent Python
-Zevri process. The worker listens only on loopback, uses a random per-process
+Refli process. The worker listens only on loopback, uses a random per-process
 token, validates requests and responses, and exits with the application.
 One worker serves each application process. Requests are serial; batching is
 available for multiple questions about one input. Model startup happens once
@@ -221,13 +226,13 @@ on each intended workload before its decisions can be trusted.
 
 ## Evaluated model release
 
-The local default is Zevri 0.3.0. On 900 human-labeled CLINC150 travel/workplace
+The local default is Refli 0.3.0. On 900 human-labeled CLINC150 travel/workplace
 requests excluded from this adaptation's training and development, complete
 route-and-branch accuracy was 84.0%, versus Laya's 80.4%. This is routing among
 15 intents within a known domain, not evidence of general-purpose superiority.
 
 The release passed a separate, predeclared review policy. At a 0.90 maximum-option
-probability cutoff, Zevri made 20 wrong automatic routes among 713 automatic routes
+probability cutoff, Refli made 20 wrong automatic routes among 713 automatic routes
 and deferred 187 requests. Laya made 71 wrong automatic routes among 888 automatic
 routes and deferred 12. The tradeoff reduces assumed handling cost when a wrong
 route costs ten review units and review costs one. The original target of a
@@ -241,4 +246,4 @@ All 1,260 exported requests were replayed through this launcher and HTTP worker,
 including 360 seen-domain controls. The default MPS precision preserved the
 release checks and held-out review counts. Reproduce that deployment check with
 `scripts/evaluate-model.mjs`; see the model repository's
-[protocol and results](https://github.com/PSPDFKit-labs/zevri/tree/main/reports/workflow-v1).
+[protocol and results](https://github.com/PSPDFKit-labs/refli/tree/main/reports/workflow-v1).
