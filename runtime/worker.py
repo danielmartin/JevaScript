@@ -1,4 +1,4 @@
-"""Loopback-only HTTP adapter for Vela. Load once, reuse for every request."""
+"""Loopback-only HTTP adapter for Zevri. Load once, reuse for every request."""
 import argparse
 import json
 import logging
@@ -96,8 +96,8 @@ def make_server(agent, port=8765):
                 # Validate serialization before writing HTTP headers.
                 json.dumps(result, allow_nan=False)
             except Exception:
-                logging.exception("Vela inference failed")
-                return self.reply(500, {"error": "Vela inference failed"})
+                logging.exception("Zevri inference failed")
+                return self.reply(500, {"error": "Zevri inference failed"})
             try:
                 self.reply(200, result)
             except (BrokenPipeError, ConnectionResetError):
@@ -113,13 +113,13 @@ def make_server(agent, port=8765):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--model", default="dmartincy/vela")
+    parser.add_argument("--model", default="nutrientdocs/zevri")
     parser.add_argument("--device", choices=["cpu", "mps", "cuda"])
     args = parser.parse_args()
-    import vela
+    import zevri
 
     with contextlib.redirect_stdout(sys.stderr):
-        agent = vela.load(args.model, device=args.device)
+        agent = zevri.load(args.model, device=args.device)
     with make_server(agent, args.port) as server:
         print("JEVA_READY " + json.dumps({"port": server.server_port}), flush=True)
         try:

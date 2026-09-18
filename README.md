@@ -23,9 +23,9 @@ decide.route("What should we inspect first?", {
 
 Save this as `ticket.jeva` and run `jeva run ticket.jeva`.
 The application has no model import, client initialization, or inference server
-setup. The first decision starts Vela locally. Later decisions reuse it.
+setup. The first decision starts Zevri locally. Later decisions reuse it.
 
-This is a working local v0.1 dialect for Node.js 22 or newer. It uses the Vela
+This is a working local v0.1 dialect for Node.js 22 or newer. It uses the Zevri
 checkout and checkpoint already on this machine. Editing and compilation do
 not load the model.
 
@@ -43,9 +43,9 @@ jeva run examples/triage.jeva --trace
 The current checkout is already installed and built. Rebuilding is only needed
 after changing compiler or runtime sources.
 
-The default backend is `../vela-decision/.venv/bin/python` with the checkpoint
-at `../vela-decision/work/candidate`. Keep that checkout next to JevaScript.
-For another location, set `JEVA_VELA_DIR`; `JEVA_PYTHON` and `JEVA_MODEL` can
+The default backend is `../zevri/.venv/bin/python` with the checkpoint
+at `../zevri/work/zevri-0.2.0`. Keep that checkout next to JevaScript.
+For another location, set `JEVA_ZEVRI_DIR`; `JEVA_PYTHON` and `JEVA_MODEL` can
 override its Python executable and checkpoint directory. Model weights are not
 included in this repository or downloaded automatically.
 
@@ -143,7 +143,7 @@ before passing them, and omit undefined fields.
 | `examples/incident-desk.jeva` | Assess several aspects of an incident in one request |
 | `examples/support-coach.jeva` | Decide whether another explanation is needed, within a retry budget |
 | `examples/triage.jeva` | Gate, route, and score a support ticket |
-| `examples/live.jeva` | Exercise every decision type against Vela |
+| `examples/live.jeva` | Exercise every decision type against Zevri |
 | `examples/benchmark.jeva` | Measure startup separately from repeated warm inference |
 
 The examples print recommendations and use local tool fixtures. Their results
@@ -200,7 +200,7 @@ TypeScript with a newer release requires reviewing the source changes and
 running the regression checks.
 
 Generated applications use a small JavaScript runtime and a persistent Python
-Vela process. The worker listens only on loopback, uses a random per-process
+Zevri process. The worker listens only on loopback, uses a random per-process
 token, validates requests and responses, and exits with the application.
 One worker serves each application process. Requests are serial; batching is
 available for multiple questions about one input. Model startup happens once
