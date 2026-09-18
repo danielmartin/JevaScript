@@ -44,7 +44,7 @@ The current checkout is already installed and built. Rebuilding is only needed
 after changing compiler or runtime sources.
 
 The default backend is `../zevri/.venv/bin/python` with the checkpoint
-at `../zevri/work/zevri-0.2.0`. Keep that checkout next to JevaScript.
+at `../zevri/work/zevri-0.3.0`. Keep that checkout next to JevaScript.
 For another location, set `JEVA_ZEVRI_DIR`; `JEVA_PYTHON` and `JEVA_MODEL` can
 override its Python executable and checkpoint directory. Model weights are not
 included in this repository or downloaded automatically.
@@ -55,6 +55,7 @@ jeva build examples/triage.jeva    # JavaScript and source maps in .jeva/build
 jeva run examples/benchmark.jeva  # cold latency, warm median, and warm p95
 npm test                         # compiler, runtime, and LSP regression checks
 npm run test:live                 # contracts against the real local model
+npm run test:model                # assert four travel routes and four branches
 ```
 
 Run these commands from your application's root directory. Relative imports
@@ -138,6 +139,7 @@ before passing them, and omit undefined fields.
 
 | File | Decision |
 | --- | --- |
+| `examples/travel-router.jeva` | Batch a 15-way route and boolean branch, with explicit review |
 | `examples/agent-tools.jeva` | Pick a useful tool from the customer's intent |
 | `examples/invoice-exceptions.jeva` | Combine exact accounting limits with judgments about evidence |
 | `examples/incident-desk.jeva` | Assess several aspects of an incident in one request |
@@ -216,3 +218,27 @@ The language supports the shape of a human judgment: interpreting context,
 selecting an action, or estimating severity. Its probabilities are model
 outputs, not calibrated guarantees. The current checkpoint needs evaluation
 on each intended workload before its decisions can be trusted.
+
+## Evaluated model release
+
+The local default is Zevri 0.3.0. On 900 human-labeled CLINC150 travel/workplace
+requests excluded from this adaptation's training and development, complete
+route-and-branch accuracy was 84.0%, versus Laya's 80.4%. This is routing among
+15 intents within a known domain, not evidence of general-purpose superiority.
+
+The release passed a separate, predeclared review policy. At a 0.90 maximum-option
+probability cutoff, Zevri made 20 wrong automatic routes among 713 automatic routes
+and deferred 187 requests. Laya made 71 wrong automatic routes among 888 automatic
+routes and deferred 12. The tradeoff reduces assumed handling cost when a wrong
+route costs ten review units and review costs one. The original target of a
+five-point routing-accuracy gain was not met. Jev has no matched result here.
+
+`examples/travel-router.jeva` applies that review rule explicitly using
+`decide.batch`. Ordinary `decide.route` returns a declared label; applications
+choose their own review behavior. The cutoff is not a safety guarantee.
+
+All 1,260 exported requests were replayed through this launcher and HTTP worker,
+including 360 seen-domain controls. The default MPS precision preserved the
+release checks and held-out review counts. Reproduce that deployment check with
+`scripts/evaluate-model.mjs`; see the model repository's
+[protocol and results](https://github.com/PSPDFKit-labs/zevri/tree/main/reports/workflow-v1).

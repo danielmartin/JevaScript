@@ -1,0 +1,35 @@
+import assert from "node:assert/strict";
+
+// A known travel domain with 15 declared tools. These are local fixtures:
+// the example prepares a handoff; it does not book or purchase anything.
+const criteria = [
+  "plug type", "travel notification", "translate", "flight status",
+  "international visa", "timezone", "exchange rate", "travel suggestion",
+  "travel alert", "vaccines", "lost luggage", "book flight", "book hotel",
+  "carry on", "car rental",
+] as const;
+
+const cases = [
+  { request: "Book me a flight to Madrid tomorrow.", expected: "book flight", booking: true },
+  { request: "I need a hotel room in Lisbon this Friday.", expected: "book hotel", booking: false },
+  { request: "What is the status of flight BA249?", expected: "flight status", booking: false },
+  { request: "Please find me a rental car for my trip.", expected: "car rental", booking: false },
+] as const;
+
+for (const example of cases) {
+  const state = { request: example.request };
+  const answers = decide.batch(state, {
+    route: { type: "choice", instructions: "Which intent best matches the user's request? Choose the most specific supported intent.", criteria },
+    booking: { type: "noul", instructions: "Is the user requesting this intent: book flight?" },
+  });
+  const route = answers.route.choice;
+  const booking = answers.booking.noul >= 0.5;
+  // This cutoff was evaluated with explicit review cost assumptions. It is not
+  // a guarantee of correctness or permission to make a purchase.
+  const confidence = Math.max(...Object.values(answers.route.probabilities));
+  const action = confidence >= 0.90 ? `Prepare ${route} handoff` : "Ask a person to review";
+  assert.equal(route, example.expected, `Wrong route for: ${example.request}`);
+  assert.equal(booking, example.booking, `Wrong booking branch for: ${example.request}`);
+  console.log(JSON.stringify({ request: example.request, tool: route, prepareFlightSearch: booking, confidence, action }));
+}
+console.log("Travel workflow checks passed: 4 routes and 4 branches.");

@@ -15,7 +15,7 @@ function start() {
   starting = new Promise((resolve, reject) => {
     const zevri = process.env.JEVA_ZEVRI_DIR ?? process.env.JEVA_VELA_DIR ?? path.resolve(root, '../zevri');
     const python = process.env.JEVA_PYTHON ?? path.join(zevri, '.venv/bin/python');
-    const model = process.env.JEVA_MODEL ?? path.join(zevri, 'work/zevri-0.2.0');
+    const model = process.env.JEVA_MODEL ?? path.join(zevri, 'work/zevri-0.3.0');
     if (!fs.existsSync(python) || !fs.existsSync(path.join(model, 'model.safetensors'))) {
       reject(new Error('Zevri is not installed. Keep zevri beside JevaScript, or set JEVA_ZEVRI_DIR / JEVA_PYTHON / JEVA_MODEL.'));
       return;

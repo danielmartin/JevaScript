@@ -17,7 +17,8 @@
     "check:compiler": "tsc -p tsconfig.fork.json",
     "test:live": "node src/cli.mjs run examples/live.jeva --trace",
     "demo": "node src/cli.mjs run examples/triage.jeva",
-    "editors:package": "node scripts/package-editors.mjs"
+    "editors:package": "node scripts/package-editors.mjs",
+    "test:model": "node src/cli.mjs run examples/travel-router.jeva"
   },
   "dependencies": {
     "typescript": "5.9.3",
