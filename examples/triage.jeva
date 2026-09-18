@@ -1,0 +1,22 @@
+const ticket = { body: "I was charged twice for my subscription. Please refund the duplicate payment." };
+
+decide ("Is this customer asking for a refund?", { message: ticket.body }).threshold(0.85) {
+  console.log("Refund requested");
+} else {
+  console.log("Needs a closer look");
+}
+
+decide.route ("Which team should handle this ticket?", {
+  criteria: { billing: "charges, invoices, refunds", technical: "bugs and outages", other: "everything else" },
+  state: { message: ticket.body },
+}) {
+  case "billing": console.log("Route to billing"); break;
+  case "technical": console.log("Route to technical support"); break;
+  default: console.log("Route to general support");
+}
+
+const severity = decide.score("How urgent is this ticket?", {
+  criteria: ["no urgency", "soon", "critical deadline or blocking issue"],
+  state: { message: ticket.body },
+});
+console.log("Urgency:", severity.toFixed(2));

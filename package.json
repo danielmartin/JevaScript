@@ -1,0 +1,37 @@
+{
+  "name": "jevascript",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript with built-in probabilistic decisions, powered by Vela",
+  "bin": {
+    "jeva": "src/cli.mjs",
+    "jeva-lsp": "src/lsp.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && npm run check:compiler && node --test test/*.test.mjs",
+    "check:compiler": "tsc -p tsconfig.fork.json",
+    "test:live": "node src/cli.mjs run examples/live.jeva --trace",
+    "demo": "node src/cli.mjs run examples/triage.jeva",
+    "editors:package": "node scripts/package-editors.mjs"
+  },
+  "dependencies": {
+    "typescript": "5.9.3",
+    "vscode-languageserver": "9.0.1",
+    "vscode-languageserver-textdocument": "1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/source-map-support": "^0.5.10",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "0.25.12",
+    "tree-sitter-cli": "^0.25.10",
+    "tree-sitter-javascript": "^0.23.1",
+    "tree-sitter-typescript": "^0.23.2",
+    "vscode-languageclient": "^9.0.1"
+  }
+}

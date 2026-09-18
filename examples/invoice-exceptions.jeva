@@ -1,0 +1,24 @@
+// Exact accounting constraints plus judgment about the evidence for an exception.
+// All outcomes are recommendations printed to the console, not payment actions.
+const invoices = [
+  { id: "INV-104", totalCents: 18500, purchaseOrderCents: 20000,
+    note: "The delivery arrived two days late because we requested a new delivery address. All items were received and inspected." },
+  { id: "INV-105", totalCents: 45000, purchaseOrderCents: 20000,
+    note: "The vendor says the price increased. No signed change order is attached." },
+  { id: "INV-106", totalCents: 15000, purchaseOrderCents: 20000,
+    note: "Several items arrived damaged. The vendor has promised replacements but has not sent a date." },
+];
+
+for (const invoice of invoices) {
+  if (invoice.totalCents > invoice.purchaseOrderCents) {
+    console.log(`${invoice.id}: review required, exceeds the purchase order`);
+    continue;
+  }
+  decide ("Does the note establish that the order was satisfactorily received?", invoice)
+    .and("Is the delivery exception explained without an unresolved supplier obligation?", invoice)
+    .threshold(0.85) {
+      console.log(`${invoice.id}: evidence supports routine processing`);
+    } else {
+      console.log(`${invoice.id}: ask the owner to review the exception`);
+    }
+}

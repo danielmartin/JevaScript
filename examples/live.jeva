@@ -1,0 +1,16 @@
+// Live smoke test: verify contracts, not predetermined model opinions.
+import { strict as assert } from "node:assert";
+const state = { message: "I was charged twice. Please refund the duplicate payment." };
+let branch = "";
+decide ("Is a refund requested?", state) { branch = "yes"; } else { branch = "no"; }
+assert.ok(branch === "yes" || branch === "no");
+const choice = decide.route("Which team?", { criteria: ["billing", "technical"], state });
+assert.ok(["billing", "technical"].includes(choice));
+const score = decide.score("How urgent?", { criteria: ["low", "high"], state });
+assert.ok(score >= 0 && score <= 1);
+const probability = decide.probability("Is a refund requested?", state);
+assert.ok(probability >= 0 && probability <= 1);
+decide.assert("Is a refund requested?", state).threshold(0);
+const result = decide.batch(state, { refund: { type: "noul", instructions: "Is a refund requested?" } });
+assert.ok(result.refund.noul >= 0 && result.refund.noul <= 1);
+console.log("Live Vela contracts passed", { branch, choice, score, probability });

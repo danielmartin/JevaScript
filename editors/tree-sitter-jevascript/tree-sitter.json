@@ -1,0 +1,4 @@
+{
+  "grammars": [{ "name": "jevascript", "camelcase": "JevaScript", "scope": "source.jeva", "path": ".", "file-types": ["jeva"] }],
+  "metadata": { "version": "0.1.0", "license": "MIT", "description": "JevaScript syntax grammar" }
+}

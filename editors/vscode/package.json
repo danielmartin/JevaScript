@@ -1,0 +1,21 @@
+{
+  "name": "jevascript",
+  "displayName": "JevaScript",
+  "description": "JevaScript language support: decisions inside TypeScript",
+  "version": "0.1.0",
+  "publisher": "jevascript-local",
+  "license": "Apache-2.0",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages"],
+  "main": "./out/extension.cjs",
+  "activationEvents": ["onLanguage:jevascript"],
+  "capabilities": { "untrustedWorkspaces": { "supported": false } },
+  "contributes": {
+    "languages": [{ "id": "jevascript", "aliases": ["JevaScript"], "extensions": [".jeva"], "configuration": "./language-configuration.json" }],
+    "grammars": [{ "language": "jevascript", "scopeName": "source.jeva", "path": "./syntaxes/jevascript.tmLanguage.json" }],
+    "commands": [{ "command": "jevascript.run", "title": "JevaScript: Run current file" }, { "command": "jevascript.restart", "title": "JevaScript: Restart language server" }],
+    "configuration": { "title": "JevaScript", "properties": {
+      "jevascript.serverPath": { "type": "string", "default": "", "scope": "machine", "description": "Optional absolute path to JevaScript src/lsp.mjs. The local development package includes its checkout path." }
+    } }
+  }
+}

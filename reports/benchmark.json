@@ -1,0 +1,9 @@
+{
+  "measuredAt": "2026-09-18T13:11:58.474Z",
+  "backend": "local Vela",
+  "coldMs": 9216.688958,
+  "warmMedianMs": 29.885666999999557,
+  "warmP95Ms": 33.72016700000131,
+  "requests": 20,
+  "scope": "Repeated one-question request; transport and inference included. Not an accuracy evaluation or cross-machine comparison."
+}

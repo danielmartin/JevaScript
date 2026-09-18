@@ -1,0 +1,3 @@
+extension.cjs
+node_modules/**
+**/*.map

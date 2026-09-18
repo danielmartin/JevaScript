@@ -1,0 +1,29 @@
+// An agent chooses its next tool from meaning, not a growing list of keywords.
+// These tools are local fixtures; the example performs no external actions.
+const requests = [
+  "The last invoice contains a charge for a seat we removed. Can you check?",
+  "Every API request has been timing out since the deployment.",
+  "I need someone to negotiate a custom contract for our company.",
+];
+
+const tools = {
+  billing: () => "Opened billing history and seat changes",
+  diagnostics: () => "Opened service health and recent deployments",
+  human: () => "Prepared a handoff to the account team",
+};
+
+for (const request of requests) {
+  console.log(`\nCustomer: ${request}`);
+  decide.route("What is the best next action to help this customer?", {
+    criteria: {
+      billing: "inspect invoices, payments, subscriptions, and charges",
+      diagnostics: "inspect technical failures, outages, and service health",
+      human: "ask a person to handle negotiation or requests outside the available tools",
+    },
+    state: { request },
+  }) {
+    case "billing": console.log(tools.billing()); break;
+    case "diagnostics": console.log(tools.diagnostics()); break;
+    case "human": console.log(tools.human()); break;
+  }
+}

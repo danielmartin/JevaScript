@@ -1,0 +1,22 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+const state = { message: "I was charged twice for my subscription. Please refund the duplicate payment." };
+const question = "Is the customer asking for a refund?";
+const start = performance.now();
+decide.probability(question, state);
+const coldMs = performance.now() - start;
+
+// Warm the same request shape; report actual elapsed time including local HTTP.
+for (let i = 0; i < 3; i++) decide.probability(question, state);
+const samples: number[] = [];
+for (let i = 0; i < 20; i++) {
+  const before = performance.now();
+  decide.probability(question, state);
+  samples.push(performance.now() - before);
+}
+samples.sort((a, b) => a - b);
+const report = { measuredAt: new Date().toISOString(), backend: "local Vela", coldMs,
+  warmMedianMs: (samples[9]! + samples[10]!) / 2, warmP95Ms: samples[18], requests: samples.length,
+  scope: "Repeated one-question request; transport and inference included. Not an accuracy evaluation or cross-machine comparison." };
+mkdirSync(".jeva", { recursive: true });
+writeFileSync(".jeva/benchmark.json", JSON.stringify(report, null, 2));
+console.log(JSON.stringify(report, null, 2));

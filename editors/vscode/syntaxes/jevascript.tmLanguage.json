@@ -1,0 +1,7 @@
+{
+  "scopeName": "source.jeva",
+  "patterns": [
+    { "match": "\\bdecide\\b", "name": "keyword.control.jeva" },
+    { "include": "source.ts" }
+  ]
+}

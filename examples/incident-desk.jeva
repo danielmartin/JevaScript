@@ -1,0 +1,29 @@
+// Several judgments over one incident, evaluated together in one request.
+const incident = {
+  title: "Checkout errors after payment-service deployment",
+  report: "Customers report failed purchases. Error rate rose to 30% five minutes after deploying version 42. No evidence of data loss. Version 41 was healthy.",
+};
+
+const assessment = decide.batch(incident, {
+  nextAction: {
+    type: "choice",
+    instructions: "Which first response is most appropriate for this incident?",
+    criteria: {
+      rollback: "recent deployment strongly correlates with a customer-facing regression",
+      investigate: "collect evidence because the cause is unclear",
+      monitor: "low-impact transient issue with no evidence of continuing customer harm",
+    },
+  },
+  customerImpact: { type: "noul", instructions: "Does this incident currently prevent customers from completing a purchase?" },
+  severity: { type: "score", instructions: "How severe is this incident?", criteria: ["cosmetic", "degraded service", "core workflow blocked", "data loss or complete outage"] },
+});
+
+console.log("Suggested action:", assessment.nextAction.choice);
+console.log("Choice probability:", assessment.nextAction.confidence.toFixed(3));
+console.log("P(customer impact):", assessment.customerImpact.noul.toFixed(3));
+console.log("Expected severity level:", assessment.severity.score.toFixed(2), "of 3");
+if (assessment.nextAction.confidence < 0.85) {
+  console.log("Ask the incident commander to review; the model has not clearly separated the available actions.");
+} else {
+  console.log("Prepare the", assessment.nextAction.choice, "runbook for the incident commander.");
+}

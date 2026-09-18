@@ -1,0 +1,12 @@
+{
+  "extends": "./vendor/typescript/src/tsconfig-base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["es2022"],
+    "composite": false,
+    "incremental": false,
+    "isolatedDeclarations": false,
+    "noEmit": true
+  },
+  "include": ["vendor/typescript/src/typescript/**/*.ts"]
+}

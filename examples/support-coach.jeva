@@ -1,0 +1,26 @@
+// A bounded dialogue loop notices when another explanation is needed.
+// Scripted customer replies make this demo repeatable without a chatbot service.
+const transcript = [
+  "Customer: I don't understand why I'm being charged twice.",
+  "Agent: The charges have different periods.",
+  "Customer: That still doesn't make sense. Can you explain it more clearly?",
+];
+const explanations = [
+  "Agent: One charge covers August and the other covers September. They are separate monthly invoices, not duplicate charges.",
+  "Agent: Invoice A is for August 1–31. Invoice B is for September 1–30. Your subscription costs the same each month.",
+];
+const feedback = [
+  "Customer: Which dates does each invoice cover?",
+  "Customer: Got it, those are different months. Thank you!",
+];
+
+let attempt = 0;
+while (attempt < explanations.length && decide("Does the customer's latest reply still show confusion?", { transcript })) {
+  const explanation = explanations[attempt]!;
+  const reply = feedback[attempt]!;
+  transcript.push(explanation, reply);
+  console.log(explanation, '\n' + reply);
+  attempt++;
+}
+const unresolved = decide("Does the customer's latest reply still show confusion?", { transcript });
+console.log(unresolved ? "Escalate to a person; explanation budget exhausted or judgment remained uncertain." : "Conversation appears resolved.");

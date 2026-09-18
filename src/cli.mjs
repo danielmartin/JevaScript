@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { createProject, formatDiagnostics } from './project.mjs';
+const [command, entry, ...flags] = process.argv.slice(2);
+process.setSourceMapsEnabled(true);
+if (!['run', 'check', 'build'].includes(command) || !entry) {
+  console.log('JevaScript\n\n  jeva run <file.jeva> [--trace]\n  jeva check <file.jeva>\n  jeva build <file.jeva>\n  jeva-lsp --stdio');
+  process.exit(command === '--help' || !command ? 0 : 1);
+}
+try {
+  if (!fs.existsSync(entry)) throw new Error(`File not found: ${entry}`);
+  if (flags.includes('--trace')) process.env.JEVA_TRACE = '1';
+  const project = createProject([entry]);
+  const result = command === 'check' ? { diagnostics: project.diagnostics() } : project.build();
+  if (result.diagnostics.length) {
+    process.stderr.write(formatDiagnostics(result.diagnostics));
+    process.exitCode = 1;
+  } else if (command === 'run') {
+    const emitted = result.outputs.get(path.resolve(entry));
+    if (!emitted) throw new Error('Compiler did not emit the entry file');
+    await import(pathToFileURL(emitted).href);
+  } else console.log(command === 'check' ? 'No errors' : 'Built .jeva/build');
+  project.dispose();
+} catch (error) {
+  console.error(error.stack ?? String(error));
+  process.exitCode = 1;
+}
