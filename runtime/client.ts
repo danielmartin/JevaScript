@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import { isDeepStrictEqual } from "node:util";
+
 export type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
 export type State = string | readonly Json[] | { readonly [key: string]: Json };
 export type Criteria = readonly string[] | Readonly<Record<string, string>>;
@@ -108,41 +111,78 @@ export class JevAssertionError extends Error {
 }
 
 /** Create an async decision function backed by the managed Vela worker. */
-export function createJev(config: { endpoint?: string; timeoutMs?: number; token?: string } = {}) {
+export function createJev(config: {
+  endpoint?: string; timeoutMs?: number; token?: string;
+  recordPath?: string; replayPath?: string; model?: string;
+} = {}) {
   const endpoint = new URL(config.endpoint ?? "http://127.0.0.1:8765/predict");
   if (!["http:", "https:"].includes(endpoint.protocol)) throw new TypeError("Expected an HTTP(S) endpoint");
   const timeoutMs = config.timeoutMs ?? 30_000;
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2_147_483_647) throw new TypeError("Invalid timeoutMs");
+  if (config.recordPath && config.replayPath) throw new Error("Choose recording or replay, not both");
+  // Record only on explicit request: these files contain application inputs.
+  if (config.recordPath) fs.writeFileSync(config.recordPath, "", { flag: "wx", mode: 0o600 });
+  const replay: unknown[] | undefined = config.replayPath
+    ? fs.readFileSync(config.replayPath, "utf8").split("\n").filter(line => line.trim()).map(line => JSON.parse(line))
+    : undefined;
+  let cursor = 0;
+  let pending = false;
+
+  function finishReplay(): void {
+    if (replay && cursor !== replay.length) throw new Error(`Replay has ${replay.length - cursor} unused decision(s); control flow changed`);
+  }
 
   async function predict<const Q extends Record<string, Question>>(state: State, questions: Q, options: RequestOptions = {}): Promise<Answers<Q>> {
-    if (typeof state !== "string" && !Array.isArray(state) && !record(state)) throw new TypeError("Expected text, an object, or an array as state");
-    validateJson(state);
-    if (!record(questions) || Object.keys(questions).length === 0 || Object.keys(questions).length > 64) {
-      throw new TypeError("Expected 1 to 64 questions");
-    }
-    // Snapshot questions before awaiting so caller mutation cannot change response validation.
-    const snapshot: Q = structuredClone(questions);
-    for (const [id, question] of Object.entries(snapshot)) {
-      text(id, "question id");
-      validateQuestion(question);
-    }
-    const body = JSON.stringify({ state, questions: snapshot });
-    if (new TextEncoder().encode(body).length > 1_048_576) throw new RangeError("Request exceeds 1 MiB");
-    const timeout = AbortSignal.timeout(timeoutMs);
-    const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
-    const response = await fetch(endpoint, {
-      method: "POST", headers: { "content-type": "application/json", ...(config.token ? { "x-jeva-token": config.token } : {}) }, body, signal, redirect: "error",
-    });
-    if (!response.ok) throw new Error(`Vela request failed with HTTP ${response.status}`);
-    const payload: unknown = await response.json();
-    if (!record(payload) || !record(payload.answers)) throw new TypeError("Vela response is missing answers");
-    const rawAnswers = payload.answers;
-    const answers = Object.fromEntries(Object.entries(snapshot).map(([id, question]) => {
-      if (!Object.hasOwn(rawAnswers, id)) throw new TypeError(`Vela response is missing answer ${id}`);
-      return [id, readAnswer(rawAnswers[id], question)];
-    }));
-    // Each result has been checked against its corresponding question above.
-    return answers as Answers<Q>;
+    const journal = Boolean(config.recordPath || replay);
+    // ponytail: sequential journals only; use request IDs if concurrent replay is needed.
+    if (journal && pending) throw new Error("Recording and replay require sequential decisions; use decide.batch for shared input");
+    if (journal) pending = true;
+    try {
+      if (typeof state !== "string" && !Array.isArray(state) && !record(state)) throw new TypeError("Expected text, an object, or an array as state");
+      validateJson(state);
+      if (!record(questions) || Object.keys(questions).length === 0 || Object.keys(questions).length > 64) {
+        throw new TypeError("Expected 1 to 64 questions");
+      }
+      // Snapshot questions before awaiting so caller mutation cannot change response validation.
+      const snapshot: Q = structuredClone(questions);
+      for (const [id, question] of Object.entries(snapshot)) {
+        text(id, "question id");
+        validateQuestion(question);
+      }
+      const body = JSON.stringify({ state, questions: snapshot });
+      if (new TextEncoder().encode(body).length > 1_048_576) throw new RangeError("Request exceeds 1 MiB");
+      const timeout = AbortSignal.timeout(timeoutMs);
+      const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+      signal.throwIfAborted();
+      const started = performance.now();
+      let payload: unknown;
+      if (replay) {
+        const saved = replay[cursor];
+        if (!record(saved) || saved.version !== 1 || !isDeepStrictEqual(saved.request, JSON.parse(body))) {
+          throw new Error(`Replay mismatch at decision ${cursor + 1}: input, question, or request order changed`);
+        }
+        payload = { answers: saved.answers };
+      } else {
+        const response = await fetch(endpoint, {
+          method: "POST", headers: { "content-type": "application/json", ...(config.token ? { "x-jeva-token": config.token } : {}) }, body, signal, redirect: "error",
+        });
+        if (!response.ok) throw new Error(`Vela request failed with HTTP ${response.status}`);
+        payload = await response.json();
+      }
+      if (!record(payload) || !record(payload.answers)) throw new TypeError("Vela response is missing answers");
+      const rawAnswers = payload.answers;
+      const answers = Object.fromEntries(Object.entries(snapshot).map(([id, question]) => {
+        if (!Object.hasOwn(rawAnswers, id)) throw new TypeError(`Vela response is missing answer ${id}`);
+        return [id, readAnswer(rawAnswers[id], question)];
+      }));
+      if (config.recordPath) fs.appendFileSync(config.recordPath, JSON.stringify({
+        version: 1, request: JSON.parse(body), answers,
+        model: config.model ?? "unspecified", elapsedMs: performance.now() - started,
+      }) + "\n");
+      if (replay) cursor++;
+      // Each result has been checked against its corresponding question above.
+      return answers as Answers<Q>;
+    } finally { if (journal) pending = false; }
   }
 
   async function probabilityOf(question: string, state: State, options: RequestOptions = {}): Promise<number> {
@@ -175,5 +215,5 @@ export function createJev(config: { endpoint?: string; timeoutMs?: number; token
     if (p < threshold) throw new JevAssertionError(question, p, threshold);
   }
 
-  return Object.assign(jev, { predict, route, score, probability: probabilityOf, assert });
+  return Object.assign(jev, { predict, route, score, probability: probabilityOf, assert, finishReplay });
 }

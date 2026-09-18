@@ -33,6 +33,25 @@ This is a working local v0.1 dialect for Node.js 22 or newer. It uses the Refli
 checkout and checkpoint already on this machine. Editing and compilation do
 not load the model.
 
+## Try an inspectable workflow without a model
+
+```sh
+npm ci
+npm run build
+npm run demo
+```
+
+The demo replays real, included Refli outputs. It shows two accepted travel
+routes, a request sent to human review, an overconfident ambiguous answer, and
+an account-permission check that skips inference. Each branch prints its
+evidence and rule. Replay is explicitly labeled; it does not measure live speed
+or predict new inputs.
+
+Follow the [decision walkthrough](examples/README.md) to run live inference,
+record inputs and probabilities, change a review threshold against the same
+answers, and run the original model failure cases as regression checks.
+The policy helper is ordinary `.ts`; the decision calls are in `.jeva`.
+
 ## Run
 
 ```sh
@@ -143,6 +162,8 @@ before passing them, and omit undefined fields.
 
 | File | Decision |
 | --- | --- |
+| `examples/decision-audit.jeva` | Inspect typed routes, review uncertainty, replay decisions, and retain exact permissions |
+| `examples/decision-regression.jeva` | Check model judgments against human labels and compare checkpoint results |
 | `examples/travel-router.jeva` | Batch a 15-way route and boolean branch, with explicit review |
 | `examples/agent-tools.jeva` | Pick a useful tool from the customer's intent |
 | `examples/invoice-exceptions.jeva` | Combine exact accounting limits with judgments about evidence |

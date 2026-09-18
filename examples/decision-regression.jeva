@@ -1,0 +1,35 @@
+// A human-labeled regression set can reveal mistakes hidden by neat syntax.
+// These are the original failure cases, not prompts rewritten to help the model.
+const cases = [
+  {
+    id: "checkout-impact", expected: true,
+    question: "Does this incident currently prevent customers from completing a purchase?",
+    state: {
+      title: "Checkout errors after payment-service deployment",
+      report: "Customers report failed purchases. Error rate rose to 30% five minutes after deploying version 42. No evidence of data loss. Version 41 was healthy.",
+    },
+  },
+  {
+    id: "still-confused", expected: true,
+    question: "Does the customer's latest reply still show confusion?",
+    state: { transcript: [
+      "Customer: I don't understand why I'm being charged twice.",
+      "Agent: The charges have different periods.",
+      "Customer: That still doesn't make sense. Can you explain it more clearly?",
+      "Agent: One charge covers August and the other covers September. They are separate monthly invoices, not duplicate charges.",
+      "Customer: Which dates does each invoice cover?",
+    ] },
+  },
+] as const;
+
+let failures = 0;
+for (const example of cases) {
+  // A probability stays inspectable; the application applies its exact rule.
+  const probability = decide.probability(example.question, example.state);
+  const actual = probability >= 0.5;
+  const passed = actual === example.expected;
+  if (!passed) failures++;
+  console.log(`${passed ? "PASS" : "FAIL"} ${example.id}: P(true)=${probability.toFixed(4)}, threshold=0.50, expected=${example.expected}, actual=${actual}`);
+}
+console.log(`${failures} disagreement(s) with human labels. These two cases do not establish general accuracy.`);
+process.exitCode = failures ? 1 : 0;

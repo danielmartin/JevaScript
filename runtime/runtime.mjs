@@ -12,6 +12,12 @@ const trace = message => { if (process.env.JEVA_TRACE === '1') process.stderr.wr
 
 function start() {
   if (starting) return starting;
+  if (process.env.JEVA_RECORD && process.env.JEVA_REPLAY) throw new Error('Choose recording or replay, not both');
+  if (process.env.JEVA_REPLAY) {
+    trace(`Replaying ${process.env.JEVA_REPLAY}; no model loaded`);
+    starting = Promise.resolve(createJev({ replayPath: process.env.JEVA_REPLAY }));
+    return starting;
+  }
   starting = new Promise((resolve, reject) => {
     const refli = process.env.JEVA_REFLI_DIR ?? path.resolve(root, '../refli');
     const python = process.env.JEVA_PYTHON ?? path.join(refli, '.venv/bin/python');
@@ -48,7 +54,8 @@ function start() {
             trace(`Refli ready in ${(performance.now() - started).toFixed(0)} ms`);
             // Idle model processes must not keep an otherwise completed program alive.
             child.unref(); child.stdout.unref(); child.stderr.unref();
-            resolve(createJev({ endpoint: `http://127.0.0.1:${port}/predict`, token, timeoutMs: 30_000 }));
+            resolve(createJev({ endpoint: `http://127.0.0.1:${port}/predict`, token, timeoutMs: 30_000,
+              recordPath: process.env.JEVA_RECORD, model }));
           } catch (error) { child.kill(); reject(error); }
         }
       }
@@ -80,4 +87,8 @@ export const decide = Object.assign((...args) => invoke('test', args), {
   batch: (...args) => invoke('predict', args),
 });
 export function stopRuntime() { if (worker) { worker.kill(); worker = undefined; } starting = undefined; }
+export async function finishReplay() {
+  // Also detect an entirely skipped recording when the application made no decisions.
+  if (starting || process.env.JEVA_REPLAY) (await start()).finishReplay();
+}
 process.once('exit', stopRuntime);

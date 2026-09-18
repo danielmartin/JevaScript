@@ -16,9 +16,10 @@
     "test": "npm run build && npm run check:compiler && node --test test/*.test.mjs",
     "check:compiler": "tsc -p tsconfig.fork.json",
     "test:live": "node src/cli.mjs run examples/live.jeva --trace",
-    "demo": "node src/cli.mjs run examples/triage.jeva",
+    "demo": "node src/cli.mjs run examples/decision-audit.jeva --replay examples/recordings/decision-audit.jsonl",
     "editors:package": "node scripts/package-editors.mjs",
-    "test:model": "node src/cli.mjs run examples/travel-router.jeva"
+    "test:model": "node src/cli.mjs run examples/travel-router.jeva",
+    "demo:live": "node src/cli.mjs run examples/decision-audit.jeva --trace"
   },
   "dependencies": {
     "typescript": "5.9.3",

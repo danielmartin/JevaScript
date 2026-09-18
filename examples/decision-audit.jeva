@@ -1,0 +1,49 @@
+import { travelTools, reviewRoute, reviewThreshold } from "./travel-policy.ts";
+
+// One real workflow: authorize, interpret, inspect, then prepare a local handoff.
+// No booking is made. Model estimates never grant account permissions.
+const requests = [
+  { id: "flight", authenticated: true, request: "Book me a flight to Madrid tomorrow." },
+  { id: "status", authenticated: true, request: "What is the status of flight BA249?" },
+  { id: "two-requests", authenticated: true, request: "Please book a flight and a hotel for my trip." },
+  { id: "ambiguous", authenticated: true, request: "Something went wrong with my trip. Can you help?" },
+  { id: "locked-account", authenticated: false, request: "Book me a flight to Madrid tomorrow." },
+];
+const threshold = reviewThreshold();
+
+for (const ticket of requests) {
+  console.log(`\n[${ticket.id}] ${ticket.request}`);
+  if (!ticket.authenticated) {
+    console.log("SIGN IN: account permission is required. No model decision requested.");
+    continue;
+  }
+
+  // Both questions share one input and one inference request. Hover over
+  // answers.route.choice: it is the union of the 15 declared travel tools.
+  const answers = decide.batch({ request: ticket.request }, {
+    route: {
+      type: "choice",
+      instructions: "Which intent best matches the user's request? Choose the most specific supported intent.",
+      criteria: travelTools,
+    },
+    booking: { type: "noul", instructions: "Is the user requesting this intent: book flight?" },
+  });
+  const alternatives = Object.entries(answers.route.probabilities)
+    .sort((a, b) => b[1] - a[1]).slice(0, 3);
+  console.log("Top estimates:", alternatives.map(([label, p]) => `${label}=${p.toFixed(4)}`).join(", "));
+  console.log(`P(flight booking)=${answers.booking.noul.toFixed(4)}`);
+
+  const result = reviewRoute(answers.route.choice, answers.route.probabilities, threshold);
+  switch (result.status) {
+    case "accepted":
+      console.log(`PREPARE ${result.tool}: ${result.probability.toFixed(4)} >= ${threshold.toFixed(2)}.`);
+      break;
+    case "review":
+      console.log(`HUMAN REVIEW: ${result.candidate} has ${result.probability.toFixed(4)} < ${threshold.toFixed(2)}.`);
+      break;
+  }
+  if (ticket.id === "ambiguous") {
+    console.log("AUTHOR REVIEW: this request lacks detail. A confident route may still be wrong.");
+  }
+  // result.tool is a type error here: ordinary TS requires narrowing first.
+}
